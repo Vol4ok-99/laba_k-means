@@ -1,20 +1,130 @@
-﻿// 1lab.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
+﻿#include <iostream>
+#include <cmath>
+#include <limits>
+#include <iomanip>
 
-#include <iostream>
+#define NUM_SAMPLES 10
+#define NUM_FEATURES 3
+#define NUM_CENTROIDS 2
+using namespace std;
+struct FEATURE {
+    double* features = new double[NUM_FEATURES] {0};
+};
+double distance(FEATURE feature1, FEATURE feature2) {
+    double sum = 0.0;
+    for (int i = 0; i < NUM_FEATURES; i++) {
+        sum += abs(feature1.features[i] - feature2.features[i]);
+    }
+    return sum;
+}
+bool findNewCentroids(FEATURE* dataset, FEATURE* centoid, int* clusterID) {
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        double minDistance = 999999;
+        int centroidID = -1;
 
-int main()
-{
-    std::cout << "Hello World!\n";
+        for (int j = 0; j < NUM_CENTROIDS; j++) {
+            double d = distance(dataset[i], centoid[j]);
+            if (d < minDistance) {
+                minDistance = d;
+                centroidID = j;
+            }
+        }
+        clusterID[i] = centroidID;
+    }
+
+    FEATURE* newCentroid = new FEATURE[NUM_CENTROIDS];
+    for (int i = 0; i < NUM_CENTROIDS; i++) {
+        int cnt = 0;
+        double* sum = new double[NUM_FEATURES] {0};
+
+        for (int j = 0; j < NUM_SAMPLES; j++) {
+            if (clusterID[j] == i) {
+                cnt++;
+                for (int f = 0; f < NUM_FEATURES; f++) {
+                    sum[f] += dataset[j].features[f];
+                }
+            }
+        }
+
+        if (cnt == 0) {
+            newCentroid[i] = centoid[i];
+        }
+        else {
+            for (int f = 0; f < NUM_FEATURES; f++) {
+                newCentroid[i].features[f] = sum[f] / cnt;
+            }
+        }
+    }
+
+    bool finishFlag = true;
+    for (int i = 0; i < NUM_CENTROIDS; i++) {
+        for (int j = 0; j < NUM_FEATURES; j++) {
+            if (abs(centoid[i].features[j] - newCentroid[i].features[j]) > 0.001) {
+                finishFlag = false;
+            }
+        }
+    }
+
+    for (int i = 0; i < NUM_CENTROIDS; i++) {
+        for (int j = 0; j < NUM_FEATURES; j++) {
+            centoid[i].features[j] = newCentroid[i].features[j];
+        }
+    }
+
+    return finishFlag;
 }
 
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
+int main() {
+    setlocale(LC_ALL, "Russian");
 
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.
+    FEATURE* dataset = new FEATURE[NUM_SAMPLES];
+    dataset[0].features = new double[NUM_FEATURES] {1.0, 2.0, 1.0};
+    dataset[1].features = new double[NUM_FEATURES] {2.0, 1.0, 1.0};
+    dataset[2].features = new double[NUM_FEATURES] {2.0, 3.0, 2.0};
+    dataset[3].features = new double[NUM_FEATURES] {1.0, 1.0, 2.0};
+    dataset[4].features = new double[NUM_FEATURES] {1.5, 2.0, 1.5};
+    dataset[5].features = new double[NUM_FEATURES] {10.0, 11.0, 10.0};
+    dataset[6].features = new double[NUM_FEATURES] {11.0, 10.0, 11.0};
+    dataset[7].features = new double[NUM_FEATURES] {10.0, 10.0, 10.0};
+    dataset[8].features = new double[NUM_FEATURES] {9.0, 11.0, 9.0};
+    dataset[9].features = new double[NUM_FEATURES] {10.5, 10.5, 10.5};
+
+    FEATURE* centoid = new FEATURE[NUM_CENTROIDS];
+    centoid[0].features = new double[NUM_FEATURES] {10.0, 10.0, 10.0};
+    centoid[1].features = new double[NUM_FEATURES] {3.0, 3.0, 3.0};
+
+    int* clusterID = new int[NUM_SAMPLES];
+
+
+    cout << fixed << setprecision(2);
+
+    int iteration = 0;
+
+    while (true) {
+        iteration = iteration + 1;
+        cout << "Итерация " << iteration << ":" << endl;
+
+        for (int i = 0; i < NUM_CENTROIDS; i++) {
+            cout << "  Центроид " << i << ": [";
+
+
+            for (int j = 0; j < NUM_FEATURES; j++) {
+                cout << centoid[i].features[j];
+                if (j < NUM_FEATURES - 1) {
+                    cout << ", ";
+                }
+            }
+
+            cout << "]" << endl;
+        }
+
+
+        bool exitFlag = findNewCentroids(dataset, centoid, clusterID);
+        if (exitFlag == true) {
+            break;
+        }
+    }
+
+    cout << "Кластеризация завершена!" << endl;
+    return 0;
+}
